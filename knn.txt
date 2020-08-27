@@ -1,0 +1,34 @@
+-- hint: shuffle
+
+database({
+  train(Id: integer, Col: integer, Val: float),
+  test(Id: integer, Col: integer, Val: float),
+  tr_lbl(Id: integer, Val: integer),
+  te_lbl(Id: integer, Val: integer)
+}).
+
+square(TeId, TrId, Col, V) <- test(TeId, Col, V1), train(TrId, Col, V2), V = (V1 - V2) * (V1 - V2).
+dist(TeId, TrId, sum<V>) <- square(TeId, TrId, Col, V).
+
+min_dist(TeId, min<V>) <- dist(TeId, TrId, V).
+export min_dist(TeId, V).
+%closest_lbl(TeId, TrId, L) <- min_dist(TeId, V1), dist(TeId, TrId, V2), tr_lbl(TrId, L), V1 = V2.
+%count_lbl(TeId, L, count<TrId>) <- closest_lbl(TeId, TrId, L).
+%majority_lbl(TeId, max<Ct>) <- count_lbl(TeId, L, Ct).
+%pred_lbl(TeId, L) <- majority_lbl(TeId, Ct), count_lbl(TeId, L, Ct).
+%export pred_lbl(TeId, L).
+
+sel_sort(TeId, K, fsmin<V>) <- min_dist(TeId, V), K = 1.
+sel_sort(TeId, K1, fsmin<V2>) <- sel_sort(TeId, K, V1), dist(TeId2, _, V2), TeId = TeId2, V1 < V2, 
+					K1 = K + 1, K1 <= 10.
+
+topK(TeId, TrId, L) <- sel_sort(TeId, _, V), dist(TeId1, TrId, V1), TeId = TeId1, V = V1, tr_lbl(TrId, L).
+count_lbl(TeId, L, count<TrId>) <- topK(TeId, TrId, L).
+majority_lbl(TeId, max<Ct>) <- count_lbl(TeId, L, Ct).
+pred_lbl(TeId, L) <- count_lbl(TeId, L, Ct), majority_lbl(TeId1, Ct1), TeId = TeId1, Ct = Ct1.
+export pred_lbl(TeId, L).
+
+lbl_correct(count<L1>) <- pred_lbl(TeId1, L1), te_lbl(TeId2, L2), TeId1 = TeId2, L1 = L2.
+lbl_wrong(count<L1>) <- pred_lbl(TeId1, L1), te_lbl(TeId2, L2), TeId1 = TeId2, L1 ~= L2.
+pred_accu(P) <- lbl_correct(Ct1), lbl_wrong(Ct2), P = Ct1 / (Ct1 + Ct2).
+export pred_accu(P).

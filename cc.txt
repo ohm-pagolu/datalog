@@ -1,0 +1,11 @@
+-- hint: shuffle
+
+database({
+  uarc(A: integer, B: integer)
+}).
+
+cc(X, fsmin<X>) <- uarc(X,_).
+cc(Y, fsmin<Z>) <- cc(X, Z), uarc(X, Y).
+clq(X, min<Y>) <- cc(X, Y).
+
+query clq(X, Y).

@@ -1,0 +1,11 @@
+-- hint: shuffle
+
+database({
+  warc(X: integer, Y: integer, D: integer)
+}).
+
+pth(X, Y, fsmin<D>) <- warc(X, Y, D), X = {startvertex}.
+pth(X, Y, fsmin<D>) <- pth(X, Z, Dxz), warc(Z, Y, Dzy), D = Dxz+Dzy.
+qpth(X, Y, min<D>) <- pth(X, Y, D).
+
+query qpth(X, Y, D).
